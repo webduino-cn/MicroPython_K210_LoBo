@@ -101,6 +101,8 @@ class PyTerm:
                 time.sleep(0.1)
                 self.uart.dtr = True
             else:
+                self.uart.dtr = 0
+                self.uart.rts = 0
                 self.uart.write(b'\r\n')
             time.sleep(0.1)
             #self.uart.dtr = False
