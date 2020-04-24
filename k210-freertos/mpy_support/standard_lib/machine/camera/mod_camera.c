@@ -84,6 +84,7 @@ static bool cam_pins_init(void)
     if (!camera_pins_init) {
         mp_fpioa_cfg_item_t camera_pin_func[8];
         // FPIOA configuration
+        /*
         camera_pin_func[0] = (mp_fpioa_cfg_item_t){-1, 42, GPIO_USEDAS_DVP_RST, FUNC_CMOS_RST};
         camera_pin_func[1] = (mp_fpioa_cfg_item_t){-1, 44, GPIO_USEDAS_DVP_PWDN, FUNC_CMOS_PWDN};
         camera_pin_func[2] = (mp_fpioa_cfg_item_t){-1, 46, GPIO_USEDAS_DVP_XCLK, FUNC_CMOS_XCLK};
@@ -92,6 +93,15 @@ static bool cam_pins_init(void)
         camera_pin_func[5] = (mp_fpioa_cfg_item_t){-1, 47, GPIO_USEDAS_DVP_PCLK, FUNC_CMOS_PCLK};
         camera_pin_func[6] = (mp_fpioa_cfg_item_t){-1, 41, GPIO_USEDAS_DVP_SCLK, FUNC_SCCB_SCLK};
         camera_pin_func[7] = (mp_fpioa_cfg_item_t){-1, 40, GPIO_USEDAS_DVP_SDA, FUNC_SCCB_SDA};
+        */
+        camera_pin_func[0] = (mp_fpioa_cfg_item_t){-1, 45, GPIO_USEDAS_DVP_RST, FUNC_CMOS_RST};
+        camera_pin_func[1] = (mp_fpioa_cfg_item_t){-1, 43, GPIO_USEDAS_DVP_PWDN, FUNC_CMOS_PWDN};
+        camera_pin_func[2] = (mp_fpioa_cfg_item_t){-1, 41, GPIO_USEDAS_DVP_XCLK, FUNC_CMOS_XCLK};
+        camera_pin_func[3] = (mp_fpioa_cfg_item_t){-1, 44, GPIO_USEDAS_DVP_VSYNC, FUNC_CMOS_VSYNC};
+        camera_pin_func[4] = (mp_fpioa_cfg_item_t){-1, 42, GPIO_USEDAS_DVP_HREF, FUNC_CMOS_HREF};
+        camera_pin_func[5] = (mp_fpioa_cfg_item_t){-1, 40, GPIO_USEDAS_DVP_PCLK, FUNC_CMOS_PCLK};
+        camera_pin_func[6] = (mp_fpioa_cfg_item_t){-1, 46, GPIO_USEDAS_DVP_SCLK, FUNC_SCCB_SCLK};
+        camera_pin_func[7] = (mp_fpioa_cfg_item_t){-1, 47, GPIO_USEDAS_DVP_SDA, FUNC_SCCB_SDA};
 
         if (!fpioa_check_pins(8, camera_pin_func, GPIO_FUNC_DVP)) {
             return false;
@@ -115,6 +125,16 @@ static bool cam_pins_deinit(void)
     if (camera_pins_init) {
         mp_fpioa_cfg_item_t camera_pin_func[8];
         // FPIOA configuration
+        /*
+        camera_pin_func[0] = (mp_fpioa_cfg_item_t){-1, 45, GPIO_USEDAS_NONE, FUNC_RESV0};
+        camera_pin_func[1] = (mp_fpioa_cfg_item_t){-1, 43, GPIO_USEDAS_NONE, FUNC_RESV0};
+        camera_pin_func[2] = (mp_fpioa_cfg_item_t){-1, 41, GPIO_USEDAS_NONE, FUNC_RESV0};
+        camera_pin_func[3] = (mp_fpioa_cfg_item_t){-1, 44, GPIO_USEDAS_NONE, FUNC_RESV0};
+        camera_pin_func[4] = (mp_fpioa_cfg_item_t){-1, 42, GPIO_USEDAS_NONE, FUNC_RESV0};
+        camera_pin_func[5] = (mp_fpioa_cfg_item_t){-1, 40, GPIO_USEDAS_NONE, FUNC_RESV0};
+        camera_pin_func[6] = (mp_fpioa_cfg_item_t){-1, 46, GPIO_USEDAS_NONE, FUNC_RESV0};
+        camera_pin_func[7] = (mp_fpioa_cfg_item_t){-1, 47, GPIO_USEDAS_NONE, FUNC_RESV0};
+        */
         camera_pin_func[0] = (mp_fpioa_cfg_item_t){-1, 42, GPIO_USEDAS_NONE, FUNC_RESV0};
         camera_pin_func[1] = (mp_fpioa_cfg_item_t){-1, 44, GPIO_USEDAS_NONE, FUNC_RESV0};
         camera_pin_func[2] = (mp_fpioa_cfg_item_t){-1, 46, GPIO_USEDAS_NONE, FUNC_RESV0};

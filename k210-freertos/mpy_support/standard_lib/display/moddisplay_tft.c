@@ -224,11 +224,11 @@ STATIC mp_obj_t display_tft_init(mp_uint_t n_args, const mp_obj_t *pos_args, mp_
         TFT_drawRect(0, 0, active_dstate->_width, active_dstate->_height, TFT_CYAN);
         int fhight = TFT_getfontheight();
         active_dstate->_fg = TFT_GREEN;
-        TFT_print("MicroPython", CENTER, (active_dstate->_height/2) - (fhight/2));
+        TFT_print("MicroPython G", CENTER, (active_dstate->_height/2) - (fhight/2));
         active_dstate->_fg = TFT_BLUE;
-        TFT_print("MicroPython", CENTER, (active_dstate->_height/2) + (fhight/2));
+        TFT_print("MicroPython B", CENTER, (active_dstate->_height/2) + (fhight/2));
         active_dstate->_fg = TFT_RED;
-        TFT_print("MicroPython", CENTER, (active_dstate->_height/2) - fhight - (fhight/2));
+        TFT_print("MicroPython R", CENTER, (active_dstate->_height/2) - fhight - (fhight/2));
         active_dstate->_fg = TFT_GREEN;
         active_dstate->_bg = TFT_BLACK;
     }

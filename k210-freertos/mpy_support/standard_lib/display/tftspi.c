@@ -53,8 +53,8 @@
 
 
 #define WAIT_CYCLE  0U
-#define LCD_X_MAX   240
-#define LCD_Y_MAX   320
+#define LCD_X_MAX   320
+#define LCD_Y_MAX   240
 #define TFT_BGR     8
 // RGB to GRAYSCALE constants
 // 0.2989  0.5870  0.1140
@@ -63,8 +63,10 @@
 #define GS_FACT_B 0.2140
 
 #define SPI_CHANNEL     (0)
-#define DCX_IO          (38)
-#define TFT_RST         (37)
+#define LCD_CS          (36)
+#define LCD_RST         (39)
+#define LCD_DC		(38)
+#define LCD_WR		(37)
 
 enum _instruction_length
 {
@@ -115,7 +117,7 @@ static mp_fpioa_cfg_item_t disp_pin_func[DISP_NUM_FUNC];
 static uint32_t tft_spi_speed = SPI_DEFAULT_SPEED;
 
 static const char TAG[] = "[TFTSPI]";
-static uint8_t invertrot = 1;
+static uint8_t invertrot = 0;
 
 // ==== Functions =====================
 
@@ -186,10 +188,10 @@ static bool tft_hard_init(void)
             return false;
         }
 
-        disp_pin_func[0] = (mp_fpioa_cfg_item_t){tft_dc_gpionum, DCX_IO, GPIO_USEDAS_DCX, FUNC_GPIOHS0 + tft_dc_gpionum};
-        disp_pin_func[1] = (mp_fpioa_cfg_item_t){-1, 36, GPIO_USEDAS_CS, FUNC_SPI0_SS3};
-        disp_pin_func[2] = (mp_fpioa_cfg_item_t){-1, 39, GPIO_USEDAS_CLK, FUNC_SPI0_SCLK};
-        disp_pin_func[3] = (mp_fpioa_cfg_item_t){tft_rst_gpionum, TFT_RST, GPIO_USEDAS_RST, FUNC_GPIOHS0 + tft_rst_gpionum};
+        disp_pin_func[0] = (mp_fpioa_cfg_item_t){tft_dc_gpionum, LCD_DC, GPIO_USEDAS_DCX, FUNC_GPIOHS0 + tft_dc_gpionum};
+        disp_pin_func[1] = (mp_fpioa_cfg_item_t){-1, LCD_CS, GPIO_USEDAS_CS, FUNC_SPI0_SS3};
+        disp_pin_func[2] = (mp_fpioa_cfg_item_t){-1, LCD_WR, GPIO_USEDAS_CLK, FUNC_SPI0_SCLK};
+        disp_pin_func[3] = (mp_fpioa_cfg_item_t){tft_rst_gpionum, LCD_RST, GPIO_USEDAS_RST, FUNC_GPIOHS0 + tft_rst_gpionum};
 
         if (!fpioa_check_pins(DISP_NUM_FUNC, disp_pin_func, GPIO_FUNC_DISP)) {
             gpiohs_set_free(tft_dc_gpionum);
@@ -256,6 +258,7 @@ static void tft_write_rgb565(uint16_t* data_buf, uint32_t length)
 {
     set_dcx_data();
     io_write(spi_dfs16, (const uint8_t *)(data_buf), length * 2);
+    //io_write(spi_dfs8, (const uint8_t *)(data_buf), length * 2);
 }
 
 /*
@@ -271,8 +274,12 @@ static void tft_write_32bit(uint32_t* data_buf, uint32_t length)
 //-------------------------------------------------------
 static void tft_fill_data(uint32_t data, uint32_t length)
 {
+    uint32_t len = 0;
+    LOGV(TAG, "tft_fill_data length = 0x%X", length);
+    if (length > 1) len = length/2 - 1;
+    else len = length;
     set_dcx_data();
-    spi_dev_fill(spi_dfs32, 0, data, data, length/2 - 1);
+    spi_dev_fill(spi_dfs32, 0, data, data, len);
 }
 
 
@@ -301,6 +308,41 @@ static bool tft_init(uint8_t hw_sw)
     tft_write_command(PIXEL_FORMAT_SET);
     data = 0x55;
     tft_write_byte(&data, 1);
+
+/*
+  // aibit LCM init
+    tft_write_command(NORMAL_DISPALY_ON);
+    mp_hal_delay_ms(10);
+    tft_write_command(BACKLIGHT_CTL2);
+    tft_write_byte((uint8_t *)"\xFF\x93\x42", 3);
+    mp_hal_delay_ms(10);
+    tft_write_command(INVERSION_DISPALY_ON);
+    mp_hal_delay_ms(10);
+    tft_write_command(MEMORY_ACCESS_CTL);
+    tft_write_byte((uint8_t *)"\x01",1);
+    mp_hal_delay_ms(10);
+    tft_write_command(POWER_CTL1);
+    tft_write_byte((uint8_t *)"\x1D\x0A", 2);
+    mp_hal_delay_ms(10);
+    tft_write_command(POWER_CTL2);
+    tft_write_byte((uint8_t *)"\x02", 1);
+    mp_hal_delay_ms(10);
+    tft_write_command(VCOM_CTL1);
+    tft_write_byte((uint8_t *)"\x2F\x27", 2);
+    mp_hal_delay_ms(10);
+    tft_write_command(VCOM_CTL2);
+    tft_write_byte((uint8_t *)"\xA4", 1);
+    tft_write_command(BACKLIGHT_CTL1);
+    tft_write_byte((uint8_t *)"\x0B", 1);
+    mp_hal_delay_ms(10);
+    tft_write_command(POSITIVE_GAMMA_CORRECT);
+    tft_write_byte((uint8_t *)"\x0F\x24\x21\x0C\x0F\x06\x50\x75\x3F\x07\x12\x05\x11\x0B\x08", 15);
+    mp_hal_delay_ms(10);
+    tft_write_command(NEGATIVE_GAMMA_CORRECT);
+    tft_write_byte((uint8_t *)"\x08\x1D\x20\x02\x0E\x04\x31\x24\x42\x03\x0B\x09\x30\x36\x0F", 15);
+    mp_hal_delay_ms(10);
+*/
+
     tft_write_command(DISPALY_ON);
     return true;
 }
@@ -455,6 +497,7 @@ void send_frame_buffer()
 {
     if ((active_dstate->use_frame_buffer) && active_dstate->tft_frame_buffer) {
         LOGV(TAG, "Send frame buffer at %p", active_dstate->tft_frame_buffer);
+        LOGV(TAG, "width:%d height:%d", active_dstate->_width, active_dstate->_height );
         // ** Send address window **
         disp_spi_transfer_addrwin(0, active_dstate->_width-1, 0, active_dstate->_height-1);
         // Send color buffer
@@ -519,10 +562,19 @@ void _tft_setRotation(uint8_t rot) {
     }
     else if (invertrot == 1) {
         switch (rotation) {
+            /* ILI9341
             case PORTRAIT:
             madctl = (MADCTL_MY | MADCTL_MX | active_dstate->TFT_RGB_BGR);
             break;
             case LANDSCAPE:
+            madctl = (MADCTL_MY | MADCTL_MV | active_dstate->TFT_RGB_BGR);
+            break;
+            */
+            // ILI9342
+            case LANDSCAPE:
+            madctl = (MADCTL_MY | MADCTL_MX | active_dstate->TFT_RGB_BGR);
+            break;
+            case PORTRAIT:
             madctl = (MADCTL_MY | MADCTL_MV | active_dstate->TFT_RGB_BGR);
             break;
             case PORTRAIT_FLIP:
@@ -575,7 +627,7 @@ int TFT_display_init(display_config_t *dconfig)
 {
     TFT_display_setvars(dconfig);
 
-    if (!tft_init(3)) return -1;
+    if (!tft_init(1)) return -1; // 0x01 soft reset, 0x2 hard reset, 0x3 both reset
     vTaskDelay(100);
 
     return 0;
