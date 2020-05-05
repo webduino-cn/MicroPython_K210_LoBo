@@ -59,14 +59,14 @@ typedef struct _task_params_t {
 static const char *_parity_name[] = {"None", "Odd", "Even"};
 static const char *_stopbits_name[] = {"1", "1.5", "2"};
 
-volatile uart_t* const  uart[3] =
+volatile uart_t* const  uart[UART_NUM_MAX] =
 {
     (volatile uart_t*)UART1_BASE_ADDR,
     (volatile uart_t*)UART2_BASE_ADDR,
     (volatile uart_t*)UART3_BASE_ADDR
 };
 
-static const uint32_t uart_instances[3] = { 0, 1, 2 };
+static const uint32_t uart_instances[UART_NUM_MAX] = { 0, 1, 2 };
 
 static const char *TAG = "[UART]";
 
@@ -348,7 +348,7 @@ int uart_putc(uint32_t uart_num, char c)
     //while ((uart[uart_num]->LSR & (1u << 5)))
     //    ;
     while (!(uart[uart_num]->LSR & (1u << 6)))
-        ;
+        vTaskDelay(1);
     uart[uart_num]->THR = c;
     return 0;
 }
@@ -361,7 +361,7 @@ int uart_write(uint32_t uart_num, const uint8_t *buff, size_t len)
         //while ((uart[uart_num]->LSR & (1u << 5)))
         //    ;
         while (!(uart[uart_num]->LSR & (1u << 6)))
-            ;
+            vTaskDelay(1);
         uart[uart_num]->THR = *buff++;
         write++;
     }
@@ -469,13 +469,18 @@ int uart_hard_init(uint32_t uart_num, uint8_t tx, int8_t rx, gpio_pin_func_t fun
     /* If tx == rx, special handling is used
      * tx pin is initialized as INPUT and switched to OUTPUT only when sending
      */
-    if (mp_used_pins[tx].func != GPIO_FUNC_NONE) {
-        LOGD(TAG, "Tx %s", gpiohs_funcs_in_use[mp_used_pins[tx].func]);
-        return -1;
-    }
-    if (mp_used_pins[rx].func != GPIO_FUNC_NONE) {
-        LOGD(TAG, "Rx %s", gpiohs_funcs_in_use[mp_used_pins[rx].func]);
-        return -2;
+    // TS. fix the 2nd time .init calling
+    static int first_time = 1;
+    if (first_time) {
+        if (mp_used_pins[tx].func != GPIO_FUNC_NONE) {
+            LOGD(TAG, "Tx %s", gpiohs_funcs_in_use[mp_used_pins[tx].func]);
+            return -1;
+        }
+        if (mp_used_pins[rx].func != GPIO_FUNC_NONE) {
+            LOGD(TAG, "Rx %s", gpiohs_funcs_in_use[mp_used_pins[rx].func]);
+            return -2;
+        }
+        first_time = 0;
     }
 
     if (mpy_uarts[uart_num].uart_buf == NULL) {
@@ -549,6 +554,8 @@ bool uart_deinit(uint32_t uart_num, uint8_t *end_task, uint8_t tx, uint8_t rx)
             tmo--;
         }
         if (mpy_uarts[uart_num].task_id != NULL) {
+            LOGE(TAG, "UART deinit timeout");
+            vTaskDelay(100 / portTICK_PERIOD_MS);
             return false;
         }
     }
@@ -659,10 +666,16 @@ static void uart_event_task(void *pvParameters)
     }
 
     // Terminate task
+    if (xSemaphoreTake(mpy_uarts[self->uart_num].uart_mutex, UART_MUTEX_TIMEOUT)) {
+        mpy_uarts[self->uart_num].task_id = NULL;
+        xSemaphoreGive(mpy_uarts[self->uart_num].uart_mutex);
+    }
+    else {
+        mpy_uarts[self->uart_num].task_id = NULL;
+        LOGE(TAG, "Can not take a semaphore!");
+    }
     LOGD(TAG, "UART task terminated");
-    xSemaphoreTake(mpy_uarts[self->uart_num].uart_mutex, UART_MUTEX_TIMEOUT);
-    mpy_uarts[self->uart_num].task_id = NULL;
-    xSemaphoreGive(mpy_uarts[self->uart_num].uart_mutex);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
     vTaskDelete(NULL);
 }
 
@@ -912,8 +925,8 @@ STATIC void machine_uart_init_helper(machine_uart_obj_t *self, size_t n_args, co
 
     if ((self->tx != args[ARG_tx].u_int) || (self->rx != args[ARG_rx].u_int)) {
         // Tx or Rx changed
-        self->tx = args[ARG_tx].u_int;
-        self->rx = args[ARG_rx].u_int;
+        if (args[ARG_tx].u_int != UART_PIN_NO_CHANGE)  self->tx = args[ARG_tx].u_int;
+        if (args[ARG_rx].u_int != UART_PIN_NO_CHANGE)  self->rx = args[ARG_rx].u_int;
         /*
         if (mp_used_pins[self->tx].func != GPIO_FUNC_NONE) {
             mp_printf(&mp_plat_print, "Tx pin\r\n");
@@ -1027,6 +1040,7 @@ STATIC mp_obj_t machine_uart_make_new(const mp_obj_type_t *type, size_t n_args, 
         if (res != pdPASS) {
             LOGE("UART", "Event task not started");
         }
+    vTaskDelay(10 / portTICK_PERIOD_MS); // TS added
     }
     return MP_OBJ_FROM_PTR(self);
 }
