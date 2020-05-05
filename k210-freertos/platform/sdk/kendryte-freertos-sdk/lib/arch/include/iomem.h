@@ -25,7 +25,8 @@ extern "C"
 #include <stdint.h>
 #include <stddef.h>
 
-#define FIX_CACHE 0  // LoBo
+//#define FIX_CACHE 0  // LoBo
+#define FIX_CACHE 1  // TS_
 #define IOMEM_BLOCK_SIZE 256
 
 void iomem_free(void *paddr) ;

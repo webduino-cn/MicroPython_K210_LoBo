@@ -138,7 +138,7 @@ public:
     {
         configASSERT(index < 2);
 #if FIX_CACHE
-        configASSERT(!is_memory_cache((uintptr_t)output_buffer));
+        //configASSERT(!is_memory_cache((uintptr_t)output_buffer));
 #endif
         if (index == 0)
         {

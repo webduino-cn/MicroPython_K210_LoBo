@@ -1625,13 +1625,14 @@ int k_spi_driver::write(k_spi_device_driver &device, gsl::span<const uint8_t> bu
         spi_.ssienr = 0x01;
         write_inst_addr(spi_.dr, &buffer_write, device.inst_width_);
         write_inst_addr(spi_.dr, &buffer_write, device.addr_width_);
+        //LOGV(TAG, "len = 0x%X, width = 0x%X, tx_frames = 0x%X)", (unsigned int)tx_buffer_len, (unsigned int)device.buffer_width_, (unsigned int) tx_frames);
         SemaphoreHandle_t event_write = xSemaphoreCreateBinary();
 
         dma_transmit_async(dma_write, buffer_write, &spi_.dr[0], 1, 0, device.buffer_width_, tx_frames, 4, event_write);
         spi_.ser = device.chip_select_mask_;
         int dma_ret = _wait_DMA_transfer(event_write, NULL, dma_write, 0, SPI_DMA_BLOCK_TIME);
         configASSERT(dma_ret >= 0);
-        if (dma_ret < 1) ret = -1;
+        //if (dma_ret < 1) ret = -1; // TS. Not work anymore !
 
         dma_close(dma_write);
         vSemaphoreDelete(event_write);
@@ -1811,6 +1812,7 @@ void k_spi_driver::fill(k_spi_device_driver &device, uint32_t instruction, uint3
     buffer = (const uint8_t *)&address;
     write_inst_addr(spi_.dr, &buffer, device.addr_width_);
 
+    LOGV(TAG, ":fill count = 0x%X, value = 0x%X)", (unsigned int) count, (unsigned int)value);
     SemaphoreHandle_t event_write = xSemaphoreCreateBinary();
     dma_transmit_async(dma_write, &value, &spi_.dr[0], 0, 0, sizeof(uint32_t), count, 4, event_write);
 
