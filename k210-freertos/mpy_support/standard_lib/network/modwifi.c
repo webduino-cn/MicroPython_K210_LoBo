@@ -1113,6 +1113,7 @@ static int wifi_endTask(bool wait)
     wifi_exit_task = true;
     xSemaphoreGive(mpy_uarts[wifi_uart_num].uart_mutex);
 
+    vTaskDelay(100 / portTICK_RATE_MS); // TS added
     if (wait) {
         int tmo = 0;
         while (task_s != 0) {
