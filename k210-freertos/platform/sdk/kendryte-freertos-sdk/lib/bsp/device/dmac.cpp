@@ -174,8 +174,8 @@ public:
     {
         C_COMMON_ENTRY;
 #if FIX_CACHE
-        //iomem_free(session_.alloc_mem);
-        //session_.alloc_mem = NULL;
+        iomem_free(session_.alloc_mem);
+        session_.alloc_mem = NULL;
 #else
         free(session_.alloc_mem);
         session_.alloc_mem = NULL;
@@ -188,6 +188,7 @@ public:
 
         src_inc = !src_inc;
         dest_inc = !dest_inc;
+        // TS. LOGV("[DMAC]", "count is 0x%X .",(unsigned int) count);
         configASSERT(count > 0 && count <= 0x3fffff);
         configASSERT((dmac.chen & (1 << channel_)) == 0);
 
@@ -284,10 +285,10 @@ public:
         else
         {
 #if FIX_CACHE
-            //iomem_free(session_.dest_malloc);
-            //iomem_free(session_.src_malloc);
-            //session_.dest_malloc = NULL;
-            //session_.src_malloc = NULL;
+            iomem_free(session_.dest_malloc);
+            iomem_free(session_.src_malloc);
+            session_.dest_malloc = NULL;
+            session_.src_malloc = NULL;
             uint8_t *src_io = (uint8_t *)src;
             uint8_t *dest_io = (uint8_t *)dest;
             if(is_memory_cache((uintptr_t)src))
@@ -401,12 +402,12 @@ public:
     {
         C_COMMON_ENTRY;
 #if FIX_CACHE
-        //iomem_free(session_.alloc_mem);
+        iomem_free(session_.alloc_mem);
 #else
-        //free(session_.alloc_mem);
+        free(session_.alloc_mem);
 #endif
 
-        //session_.alloc_mem = NULL;
+        session_.alloc_mem = NULL;
         if (count == 0)
         {
             if (completion_event) xSemaphoreGive(completion_event);
