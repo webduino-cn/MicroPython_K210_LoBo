@@ -4,9 +4,12 @@ name = "K210_board"
 class board_info:
     def __init__(self):
         self.pin_num = 48;
-        self.WIFI_TX = 6;
-        self.WIFI_RX = 7;
-        self.WIFI_EN = 8;
+        #self.WIFI_TX = 6;
+        #self.WIFI_RX = 7;
+        #self.WIFI_EN = 8;
+        self.WIFI_TX = 27;
+        self.WIFI_RX = 28;
+        self.WIFI_EN = 16;
         self.PIN9 = 9;
         self.PIN10 = 10;
         self.PIN11 = 11;
